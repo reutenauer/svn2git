@@ -235,7 +235,7 @@ module Svn2Git
         cmd += "'--ignore-paths=#{regex}'"
       end
       ret = run_command(cmd, true, true)
-      parse_log(ret)
+      tweak_log(ret)
 
       get_branches
     end
@@ -495,10 +495,10 @@ module Svn2Git
           rev = matches['rev']
           commit = matches['commit']
           commits[rev] = commit
-          puts "Revision #{rev} fetched as commit #{commit}"
         end
       end
 
+      new_log_data = { }
       commits.keys.sort { |a, b| a.to_i <=> b.to_i }.each do |rev|
         commit = commits[rev]
         timestamp = `git log -1 --format='%at' #{commit}`.strip
@@ -506,6 +506,21 @@ module Svn2Git
         message = `git log -1 --format='%s' #{commit}`.strip
         ENV['TZ'] = timezones[author]
         date = Time.at(timestamp.to_i)
+        entry = { date: date, message: message, commit: commit, author: author }
+        new_log_data[rev.to_i] = entry
+      end
+
+      new_log_data
+    end
+
+    def tweak_log(log)
+      new_log_data = parse_log(log)
+      max_rev = new_log_data.keys.max
+      new_log_data.each do |rev, data|
+        commit = data[:commit]
+        message = data[:message]
+        date = data[:date]
+        author = data[:author]
         puts "Revision #{rev}, commit #{commit}, #{author} #{date.to_s} #{message}"
       end
     end
