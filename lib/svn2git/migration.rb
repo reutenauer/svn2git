@@ -126,6 +126,10 @@ module Svn2Git
           options[:authors] = authors
         end
 
+        opts.on('--dates DATES_FILE', "Path to file containing svn-to-git time zones mapping") do |dates|
+          options[:dates] = dates
+        end
+
         opts.on('--exclude REGEX', 'Specify a Perl regular expression to filter paths when fetching; can be used multiple times') do |regex|
           options[:exclude] << regex
         end
@@ -474,13 +478,35 @@ module Svn2Git
     end
 
     def parse_log(log)
+      raise "No dates file provided.  Use --date" unless @options[:dates]
+      timezones = { }
+      File.read(@options[:dates]).each_line do |line|
+        if line =~ /([^=]+)=([^=]+)/
+          author = $1.strip
+          timezone = $2.strip
+          timezones[author] = timezone
+        end
+      end
+
+      commits = { }
       log.each_line do |line|
         matches = /^r(?<rev>\d+) = (?<commit>[0-9a-f]+)/.match(line)
         if matches
           rev = matches['rev']
           commit = matches['commit']
+          commits[rev] = commit
           puts "Revision #{rev} fetched as commit #{commit}"
         end
+      end
+
+      commits.keys.sort { |a, b| a.to_i <=> b.to_i }.each do |rev|
+        commit = commits[rev]
+        timestamp = `git log -1 --format='%at' #{commit}`.strip
+        author = `git log -1 --format='%an' #{commit}`.strip
+        message = `git log -1 --format='%s' #{commit}`.strip
+        ENV['TZ'] = timezones[author]
+        date = Time.at(timestamp.to_i)
+        puts "Revision #{rev}, commit #{commit}, #{author} #{date.to_s} #{message}"
       end
     end
 
