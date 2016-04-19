@@ -21,7 +21,7 @@
 # THE SOFTWARE.
 
 require 'rubygems'
-require 'svn2git'
+require File.expand_path('../../lib/svn2git', __FILE__)
 
 migration = Svn2Git::Migration.new(ARGV)
 migration.run!

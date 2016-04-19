@@ -230,7 +230,9 @@ module Svn2Git
         regex = '^(?:' + regex.join('|') + ')(?:' + exclude.join('|') + ')'
         cmd += "'--ignore-paths=#{regex}'"
       end
-      run_command(cmd, true, true)
+      ret = run_command(cmd, true, true)
+      puts 'Got that:'
+      puts ret
 
       get_branches
     end
@@ -391,6 +393,7 @@ module Svn2Git
         loop { @stdin_queue << $stdin.gets.chomp }
       end
 
+      log = []
       # Open4 forks, which JRuby doesn't support.  But JRuby added a popen4-compatible method on the IO class,
       # so we can use that instead.
       IO.popen("2>&1 #{cmd}") do |output|
@@ -411,6 +414,8 @@ module Svn2Git
             end
           end
         end
+        puts "Got log: " + log.join("\n")
+        puts "--- End of the log"
 
         # Simple pass-through thread to take anything the user types via STDIN and passes it through to the
         # sub-process's stdin pipe.
