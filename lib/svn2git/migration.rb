@@ -2,6 +2,7 @@ require 'optparse'
 require 'pp'
 require 'timeout'
 require 'thread'
+require 'time'
 
 module Svn2Git
   DEFAULT_AUTHORS_FILE = "~/.svn2git/authors"
@@ -516,13 +517,25 @@ module Svn2Git
     def tweak_log(log)
       new_log_data = parse_log(log)
       max_rev = new_log_data.keys.max
-      new_log_data.each do |rev, data|
+      (1..max_rev).each do |rev|
+        data = new_log_data[rev]
         commit = data[:commit]
         message = data[:message]
         date = data[:date]
         author = data[:author]
         puts "Revision #{rev}, commit #{commit}, #{author} #{date.to_s} #{message}"
+        run_fast("git checkout #{commit}")
+        run_fast("git commit --amend --date=#{date.iso8601} -m '#{message}'")
+        run_fast("git tag r#{rev}")
+        run_fast("git checkout master")
+        run_fast("git rebase --onto r#{rev} #{commit}")
       end
+    end
+
+    def run_fast(line)
+      puts "Running: #{line}"
+      out = `#{line}`
+      puts "Result is #{out}"
     end
 
   end
