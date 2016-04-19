@@ -474,6 +474,14 @@ module Svn2Git
     end
 
     def parse_log(log)
+      log.each_line do |line|
+        matches = line =~ /^r(?rev:\d+) = (?commit:[0-9a-f]+)/
+        if matches
+          rev = matches['rev']
+          commit = matches['commit']
+          puts "Revision #{rev} fetched as commit #{commit}"
+        end
+      end
     end
 
   end
