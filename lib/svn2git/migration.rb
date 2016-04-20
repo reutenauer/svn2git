@@ -480,12 +480,12 @@ module Svn2Git
 
     def parse_log(log)
       raise "No dates file provided.  Use --date" unless @options[:dates]
-      timezones = { }
+      @timezones = { }
       File.read(@options[:dates]).each_line do |line|
         if line =~ /([^=]+)=([^=]+)/
           author = $1.strip
           timezone = $2.strip
-          timezones[author] = timezone
+          @timezones[author] = timezone
         end
       end
 
@@ -505,8 +505,9 @@ module Svn2Git
         timestamp = `git log -1 --format='%at' #{commit}`.strip
         author = `git log -1 --format='%an' #{commit}`.strip
         message = `git log -1 --format='%s' #{commit}`.strip
-        ENV['TZ'] = timezones[author]
+        ENV['TZ'] = @timezones[author]
         date = Time.at(timestamp.to_i)
+        puts date.to_s if author == "Jonathan Kew"
         entry = { date: date, message: message, commit: commit, author: author }
         new_log_data[rev.to_i] = entry
       end
@@ -523,12 +524,13 @@ module Svn2Git
         message = data[:message]
         date = data[:date]
         author = data[:author]
+        ENV['TZ'] = @timezones[author]
         puts "Revision #{rev}, commit #{commit}, #{author} #{date.to_s} #{message}"
         run_fast("git checkout #{commit}")
         run_fast("git commit --amend --date=#{date.iso8601} -m '#{message}'")
         run_fast("git tag r#{rev}")
         run_fast("git checkout master")
-        run_fast("git rebase --onto r#{rev} #{commit}")
+        # run_fast("git rebase --onto r#{rev} #{commit}")
       end
     end
 
