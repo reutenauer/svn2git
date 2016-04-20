@@ -535,8 +535,8 @@ module Svn2Git
         run_fast("git tag r#{rev}")
         run_fast("git checkout master")
       end
-      puts "Resetting master to r#{@range[0]} and cherry-picking to r#{@range[1]}"
-      run_fast("git reset --hard r#{@range[0]}")
+      puts "Resetting master to r#{min_rev} and cherry-picking to r#{max_rev}"
+      run_fast("git reset --hard r#{min_rev}")
       run_fast("git cherry-pick --allow-empty " + (new_log_data.keys.sort - [min_rev]).map { |i| "r#{i}" }.join(' '))
     end
 
