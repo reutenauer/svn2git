@@ -533,8 +533,10 @@ module Svn2Git
         run_fast("git commit --amend --date=#{date.iso8601} -m '#{message}'")
         run_fast("git tag r#{rev}")
         run_fast("git checkout master")
-        # run_fast("git rebase --onto r#{rev} #{commit}")
       end
+      puts "Resetting master to r#{@range[0]} and cherry-picking r#{@range[0]+1} to r#{@range[1]}"
+      run_fast("git reset --hard r#{@range[0]}")
+      run_fast("git cherry-pick --allow-empty " + (@range[0]+1..@range[1]).map { |i| "r#{i}" }.join(' '))
     end
 
     def tweak_timezone(data)
