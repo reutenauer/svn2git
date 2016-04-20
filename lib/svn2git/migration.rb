@@ -520,8 +520,9 @@ module Svn2Git
 
     def tweak_log(log)
       new_log_data = parse_log(log)
+      min_rev = new_log_data.keys.min
       max_rev = new_log_data.keys.max
-      (@range[0].to_i..@range[1].to_i).each do |rev|
+      new_log_data.keys.sort.each do |rev|
         data = new_log_data[rev]
         commit = data[:commit]
         message = data[:message]
@@ -534,9 +535,9 @@ module Svn2Git
         run_fast("git tag r#{rev}")
         run_fast("git checkout master")
       end
-      puts "Resetting master to r#{@range[0]} and cherry-picking r#{@range[0]+1} to r#{@range[1]}"
+      puts "Resetting master to r#{@range[0]} and cherry-picking to r#{@range[1]}"
       run_fast("git reset --hard r#{@range[0]}")
-      run_fast("git cherry-pick --allow-empty " + (@range[0]+1..@range[1]).map { |i| "r#{i}" }.join(' '))
+      run_fast("git cherry-pick --allow-empty " + (new_log_data.keys.sort - [min_rev]).map { |i| "r#{i}" }.join(' '))
     end
 
     def tweak_timezone(data)
