@@ -219,9 +219,9 @@ module Svn2Git
 
       cmd = "git svn fetch "
       unless revision.nil?
-        range = revision.split(":")
-        range[1] = "HEAD" unless range[1]
-        cmd += "-r #{range[0]}:#{range[1]} "
+        @range = revision.split(":")
+        @range[1] = "HEAD" unless @range[1]
+        cmd += "-r #{@range[0]}:#{@range[1]} "
       end
       unless exclude.empty?
         # Add exclude paths to the command line; some versions of git support
@@ -507,8 +507,11 @@ module Svn2Git
         message = `git log -1 --format='%s' #{commit}`.strip
         ENV['TZ'] = @timezones[author]
         date = Time.at(timestamp.to_i)
-        puts date.to_s if author == "Jonathan Kew"
         entry = { date: date, message: message, commit: commit, author: author }
+        ENV['TZ'] = tweak_timezone(entry)
+        date = Time.at(timestamp.to_i)
+        entry[:date] = date
+        puts date.to_s if author == "Jonathan Kew"
         new_log_data[rev.to_i] = entry
       end
 
@@ -518,19 +521,29 @@ module Svn2Git
     def tweak_log(log)
       new_log_data = parse_log(log)
       max_rev = new_log_data.keys.max
-      (1..max_rev).each do |rev|
+      (@range[0].to_i..@range[1].to_i).each do |rev|
         data = new_log_data[rev]
         commit = data[:commit]
         message = data[:message]
         date = data[:date]
         author = data[:author]
-        ENV['TZ'] = @timezones[author]
+        ENV['TZ'] = tweak_timezone(data)
         puts "Revision #{rev}, commit #{commit}, #{author} #{date.to_s} #{message}"
         run_fast("git checkout #{commit}")
         run_fast("git commit --amend --date=#{date.iso8601} -m '#{message}'")
         run_fast("git tag r#{rev}")
         run_fast("git checkout master")
         # run_fast("git rebase --onto r#{rev} #{commit}")
+      end
+    end
+
+    def tweak_timezone(data)
+      author = data[:author]
+      date = data[:date]
+      if author == 'Arthur Reutenauer' && date.year < 2011
+        'Europe/Paris'
+      else
+        @timezones[author]
       end
     end
 
