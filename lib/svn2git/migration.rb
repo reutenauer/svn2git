@@ -530,18 +530,19 @@ module Svn2Git
         author = data[:author]
         ENV['TZ'] = tweak_timezone(data)
         puts "Revision #{rev}, commit #{commit}, #{author} #{date.to_s} #{message}"
-        run_fast("git checkout #{commit}")
-        run_fast("git commit --amend --date=#{date.iso8601} -m '#{message}'")
-        run_fast("git tag r#{rev}")
-        run_fast("git checkout master")
+        # run_fast("git checkout #{commit}")
+        # run_fast("git commit --amend --date=#{date.iso8601} -m '#{message}'")
+        # run_fast("git tag r#{rev}")
+        # run_fast("git checkout master")
       end
       puts "Resetting master to r#{min_rev} and cherry-picking to r#{max_rev}"
-      run_fast("git reset --hard r#{min_rev}")
-      run_fast("git cherry-pick --allow-empty " + (new_log_data.keys.sort - [min_rev]).map { |i| "r#{i}" }.join(' '))
+      # run_fast("git reset --hard r#{min_rev}")
+      # run_fast("git cherry-pick --allow-empty " + (new_log_data.keys.sort - [min_rev]).map { |i| "r#{i}" }.join(' '))
       env_filter = <<__EOFILTER__
         export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
         export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
         export GIT_COMMITTER_DATE="$GIT_AUTHOR_DATE"
+        echo "GIT_COMMITTER_DATE=$GIT_COMMITTER_DATE"
 __EOFILTER__
       run_fast("git filter-branch --env-filter '#{env_filter}' --tag-name-filter cat -- --branches --tags")
     end
@@ -553,6 +554,15 @@ __EOFILTER__
         'Europe/Paris'
       else
         @timezones[author]
+      end
+    end
+
+    def self.parse_date(date)
+      matches = /^@(?<timestamp>:\d+) \+(?<timezone>:\d{4})$/.match(date)
+      if matches
+        time = Time.at(timestamp)
+      else
+        raise StandardError.new("Couldn’t parse committer date")
       end
     end
 
