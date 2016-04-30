@@ -1,6 +1,11 @@
-svn2git
-=======
+reutenauer/svn2git
+==================
 
+Fork of [nirvdrum/svn2git](https://github.com/nirvdrum/svn2git) with highly
+idiosyncrasic changes for setting times of commits and related information.
+
+Original README
+---------------
 _svn2git_ is a tiny utility for migrating projects from Subversion to Git
 while keeping the trunk, branches and tags where they should be. It uses
 git-svn to clone an svn repository and does some clean-up to make sure
