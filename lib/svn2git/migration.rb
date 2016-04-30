@@ -538,6 +538,14 @@ module Svn2Git
       puts "Resetting master to r#{min_rev} and cherry-picking to r#{max_rev}"
       run_fast("git reset --hard r#{min_rev}")
       run_fast("git cherry-pick --allow-empty " + (new_log_data.keys.sort - [min_rev]).map { |i| "r#{i}" }.join(' '))
+      env_filter = <<__EOFILTER__
+        if [ "GIT_COMMITTER_EMAIL" != "$GIT_AUTHOR_EMAIL" ]; then
+          export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
+          export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+          export GIT_COMMITTER_DATE="$GIT_AUTHOR_DATE"
+        fi
+__EOFILTER__
+      run_fast("git filter-branch --env-filter '#{env_filter}' --tag-name-filter cat -- --branches --tags")
     end
 
     def tweak_timezone(data)
