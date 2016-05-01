@@ -3,6 +3,7 @@ require 'pp'
 require 'timeout'
 require 'thread'
 require 'time'
+require 'fileutils'
 
 module Svn2Git
   DEFAULT_AUTHORS_FILE = "~/.svn2git/authors"
@@ -538,11 +539,15 @@ module Svn2Git
       puts "Resetting master to r#{min_rev} and cherry-picking to r#{max_rev}"
       # run_fast("git reset --hard r#{min_rev}")
       # run_fast("git cherry-pick --allow-empty " + (new_log_data.keys.sort - [min_rev]).map { |i| "r#{i}" }.join(' '))
+      datefile = File.join(FileUtils.getwd, @options[:dates])
+      parse_date_rb = File.expand_path('../parse-date.rb', __FILE__)
       env_filter = <<__EOFILTER__
         export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
         export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
-        export GIT_COMMITTER_DATE="$GIT_AUTHOR_DATE"
         echo "GIT_COMMITTER_DATE=$GIT_COMMITTER_DATE"
+        localdate=`ruby #{parse_date_rb} "$GIT_AUTHOR_DATE" "$GIT_AUTHOR_NAME" #{datefile}`
+        export GIT_AUTHOR_DATE=$localdate
+        export GIT_COMMITTER_DATE=$localdate
 __EOFILTER__
       run_fast("git filter-branch --env-filter '#{env_filter}' --tag-name-filter cat -- --branches --tags")
     end
