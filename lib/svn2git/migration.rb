@@ -531,14 +531,8 @@ module Svn2Git
         author = data[:author]
         ENV['TZ'] = tweak_timezone(data)
         puts "Revision #{rev}, commit #{commit}, #{author} #{date.to_s} #{message}"
-        # run_fast("git checkout #{commit}")
-        # run_fast("git commit --amend --date=#{date.iso8601} -m '#{message}'")
-        # run_fast("git tag r#{rev}")
-        # run_fast("git checkout master")
       end
       puts "Resetting master to r#{min_rev} and cherry-picking to r#{max_rev}"
-      # run_fast("git reset --hard r#{min_rev}")
-      # run_fast("git cherry-pick --allow-empty " + (new_log_data.keys.sort - [min_rev]).map { |i| "r#{i}" }.join(' '))
       datefile = File.join(FileUtils.getwd, @options[:dates])
       parse_date_rb = File.expand_path('../parse-date.rb', __FILE__)
       env_filter = <<__EOFILTER__
@@ -559,15 +553,6 @@ __EOFILTER__
         'Europe/Paris'
       else
         @timezones[author]
-      end
-    end
-
-    def self.parse_date(date)
-      matches = /^@(?<timestamp>:\d+) \+(?<timezone>:\d{4})$/.match(date)
-      if matches
-        time = Time.at(timestamp)
-      else
-        raise StandardError.new("Couldn’t parse committer date")
       end
     end
 
