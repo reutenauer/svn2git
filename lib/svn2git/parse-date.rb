@@ -33,7 +33,9 @@ def parse_date(date, author)
     end
   end
 
-  ENV['TZ'] = $timezones[author]
+  timezone = $timezones[author]
+  timezone = 'Europe/Paris' if author == 'Arthur Reutenauer' && date.year < 2011
+  ENV['TZ'] = timezone
   time.iso8601
 end
 
