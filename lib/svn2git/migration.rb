@@ -543,7 +543,9 @@ module Svn2Git
         export GIT_AUTHOR_DATE=$localdate
         export GIT_COMMITTER_DATE=$localdate
 __EOFILTER__
-      run_fast("git filter-branch --env-filter '#{env_filter}' --tag-name-filter cat -- --all")
+      run_me_twice = "git filter-branch -f --env-filter '#{env_filter}' --tag-name-filter cat -- --all"
+      run_fast(run_me_twice)
+      run_fast(run_me_twice)
       run_fast("git gc")
     end
 
